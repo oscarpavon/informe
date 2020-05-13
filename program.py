@@ -226,7 +226,11 @@ class Handler:
 
     def modify_table(self, document):
         print("table")
-        document.tables[0].cell(1,0).text = "new value"
+        i = 1 
+        for elem in self.list:
+            (des , count , price , total) = elem     
+            document.tables[0].cell(i,0).text = des 
+            i = i + 1
 
     def on_button_generate_pressed(self, button):
         print("generate")
