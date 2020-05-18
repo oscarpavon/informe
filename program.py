@@ -1,5 +1,3 @@
-import gi
-gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from datetime import date
 from datetime import datetime
@@ -10,6 +8,7 @@ import re
 from docx import Document
 from photocopy import PhotocopyManager
 
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 
 today = date.today()
@@ -32,23 +31,43 @@ class Handler:
     total = 0
     dialog = None
     def __init__(self, manager):
-        print("init") 
         document_open()
           
         self.grid = Gtk.Grid()
         
         hbox = builder.get_object("main_box")
 
-        self.list = Gtk.ListStore(str,int,int,int)
+        self.list = Gtk.ListStore(str,int,str,int,int)
 
         self.treeview = Gtk.TreeView.new_with_model(self.list)
-        for i, column_title in enumerate(["Descripcion","Cantidad","Precio","Importe"]):
+        for i, column_title in enumerate(["Descripcion","Cantidad","Medida","Precio","Importe"]):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title,renderer, text=i)
             self.treeview.append_column(column)
         
-        hbox.pack_start(self.treeview,True,True,0)
-    
+        hbox.pack_start(self.treeview,True,True,1)
+        #radios buttons units
+        rb_meter = builder.get_object("rb_meters")
+        rb_meter2 = builder.get_object("rb_m2")
+        rb_unit= builder.get_object("rb_unit")
+        rb_ml= builder.get_object("rb_ml")
+
+        rb_meter.connect("toggled",self.rb_action_meters)
+        rb_meter2.connect("toggled",self.rb_action_m2)
+        rb_unit.connect("toggled", self.rb_action_units)
+        rb_ml.connect("toggled", self.rb_action_ml)
+
+        self.messure = "m2" 
+        
+    def rb_action_ml(self,button):
+        self.messure = "ml"
+    def rb_action_m2(self,button):
+        self.messure = "m2"
+    def rb_action_meters(self,button):
+        self.messure = "m"
+    def rb_action_units(self,button):
+        self.messure = "und"
+
     def init(self):
         #manager.init_logger()    
         self.manager = manager 
@@ -227,9 +246,19 @@ class Handler:
     def modify_table(self, document):
         print("table")
         i = 1 
+        table = document.tables[0]
         for elem in self.list:
-            (des , count , price , total) = elem     
-            document.tables[0].cell(i,0).text = des 
+            (des , count , unit ,price , total) = elem     
+            table.cell(i,0).text = des 
+            table.cell(i,1).text = str(count)+self.messure+"."
+            table.cell(i,1).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            
+            table.cell(i,2).text = str(price)
+            table.cell(i,2).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+            table.cell(i,3).text = str(total)
+            table.cell(i,3).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
             i = i + 1
 
     def on_button_generate_pressed(self, button):
@@ -266,7 +295,7 @@ class Handler:
         count = int(count_obj.get_text())
         price = int(price_obj.get_text())
         import_value = price * count
-        new_element = (description_obj.get_text(), count , price, import_value) 
+        new_element = (description_obj.get_text(), count ,self.messure, price , import_value) 
         self.list.append(list(new_element))
          
 
