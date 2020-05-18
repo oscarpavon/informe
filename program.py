@@ -10,6 +10,8 @@ from photocopy import PhotocopyManager
 
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
+from num2words import num2words
+from random import randint
 
 today = date.today()
 def document_open():
@@ -18,7 +20,7 @@ def document_open():
     document.save('./datos/new_document.docx')
 
 def formated_namber(value):
-    formated = "{:,}".format(value) + " Gs"
+    formated = "{:,}".format(value)
     return formated 
 
 def today_file(read_format):
@@ -26,18 +28,36 @@ def today_file(read_format):
     filepath = "./datos/" + str(today) + ".txt"
     from_file = open(filepath,read_format)
 
+def get_text_moth(number):
+    switcher = {
+            1: "Enero",
+            2: "Febrero",
+            3: "Marzo",
+            4: "Abril",
+            5: "Mayo",
+            6: "Junio",
+            7: "Julio",
+            8: "Agosto",
+            9: "Setiembre",
+            10: "Octubre",
+            11: "Noviembre",
+            12: "Diciembre"
+            }
+    return switcher.get(number,"Invalid")
+
 class Handler:
     manager = None 
     total = 0
     dialog = None
     def __init__(self, manager):
         document_open()
-          
+
+
         self.grid = Gtk.Grid()
         
         hbox = builder.get_object("main_box")
 
-        self.list = Gtk.ListStore(str,int,str,int,int)
+        self.list = Gtk.ListStore(str,str,str,str,str)
 
         self.treeview = Gtk.TreeView.new_with_model(self.list)
         for i, column_title in enumerate(["Descripcion","Cantidad","Medida","Precio","Importe"]):
@@ -242,11 +262,18 @@ class Handler:
         run = document.paragraphs[paragraph_index].add_run(value)
         run.font.bold = True
     
+    def table_clean(table):
+        for row in table.rows:
+            row.cells[0].text = ""
 
     def modify_table(self, document):
         print("table")
         i = 1 
         table = document.tables[0]
+        row_count = 0
+        for row in table.rows:
+            row_count = row_count + 1
+         
         for elem in self.list:
             (des , count , unit ,price , total) = elem     
             table.cell(i,0).text = des 
@@ -258,8 +285,15 @@ class Handler:
 
             table.cell(i,3).text = str(total)
             table.cell(i,3).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
-
+            
             i = i + 1
+
+        table.cell(row_count-2,3).text = formated_namber(self.total) 
+        text_total_line = "Son Gs.: " + num2words(self.total,lang='es') + "---------------"
+        table.cell(row_count-1,0).text = ''
+        run = table.cell(row_count-1,0).paragraphs[0].add_run(text_total_line) 
+        run.font.bold = True
+        run.font.size = 10
 
     def on_button_generate_pressed(self, button):
         print("generate")
@@ -268,7 +302,17 @@ class Handler:
         text_box_adress = builder.get_object("adress")
         text_box_telephone= builder.get_object("telephone")
 
+        day = today.strftime("%d")
+        year = today.strftime("%Y")
+        moth_number = int(today.strftime("%m"))
+        inform_date = "Encarnacion " + day + " de " + get_text_moth(moth_number) + " de " + year          
+        inform_date = inform_date.upper()
+
         document = Document("./datos/plantilla.docx")
+
+        self.insert_text_bold(document, 0, 'PRESUPUESTO' , "                                                    "+"Nro:"+str(randint(12000,40000))+"-"+str(randint(0,10)))
+        
+        self.insert_text_bold(document, 2, inform_date , '')
 
         self.insert_text_bold(document, 3, 'NOMBRE: ' , text_box_name.get_text())
         self.insert_text_bold(document, 4, 'OBRA: ' , text_box_build.get_text())
@@ -292,12 +336,14 @@ class Handler:
         description_obj = builder.get_object("in_description")
         price_obj = builder.get_object("in_price")
         count_obj = builder.get_object("in_count")
-        count = int(count_obj.get_text())
+        count = float(count_obj.get_text())
         price = int(price_obj.get_text())
-        import_value = price * count
-        new_element = (description_obj.get_text(), count ,self.messure, price , import_value) 
+        import_value = int(price * count)
+        new_element = (description_obj.get_text(), count_obj.get_text() ,self.messure, formated_namber(price) , formated_namber(import_value)) 
         self.list.append(list(new_element))
-         
+        self.total = self.total + import_value         
+        total_label = builder.get_object("label_total")
+        total_label.set_text(formated_namber(self.total))
 
     def button_input_mount_pressed(self, button):
         input_mount = builder.get_object("input_value")
