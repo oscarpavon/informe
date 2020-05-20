@@ -1,3 +1,5 @@
+import gi
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 from datetime import date
 from datetime import datetime
@@ -301,6 +303,7 @@ class Handler:
 
     def on_button_generate_pressed(self, button):
         print("generate")
+        self.inform_generated = True
         text_box_name = builder.get_object("client_name")
         text_box_build = builder.get_object("job_name")
         text_box_adress = builder.get_object("adress")
@@ -325,7 +328,7 @@ class Handler:
     
         self.modify_table(document)
 
-        document.save('./datos/new_document.docx')
+        document.save('./datos/presupuesto_generado.docx')
         
     def btn_delete(self, button):
         print("delete")
@@ -334,6 +337,10 @@ class Handler:
         for path in paths:
            iter = model.get_iter(path)
            model.remove(iter)
+           
+        
+        total_label = builder.get_object("label_total")
+        total_label.set_text(formated_namber(self.total))
 
     def btn_add(self, button):
         print("add")
@@ -348,6 +355,9 @@ class Handler:
         self.total = self.total + import_value         
         total_label = builder.get_object("label_total")
         total_label.set_text(formated_namber(self.total))
+        price_obj.set_text("")
+        count_obj.set_text("")
+        description_obj.set_text("")
 
     def button_input_mount_pressed(self, button):
         input_mount = builder.get_object("input_value")
@@ -363,7 +373,7 @@ class Handler:
             os.startfile(relative_path, "print") 
 
     def btn_inform_show(self, button):
-        if(inform_generated == False):
+        if(self.inform_generated == False):
             print("No file generated") 
             return
         if platform.system() == 'Windows':    # Windows
