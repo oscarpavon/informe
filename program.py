@@ -336,11 +336,14 @@ class Handler:
         (model, paths) = selected.get_selected_rows()
         for path in paths:
            iter = model.get_iter(path)
+           text_value = self.list[iter][4]
+           value = text_value.replace(',','')
+           print(int(value))
+           self.total = self.total - int(value) 
+           total_label = builder.get_object("label_total")
+           total_label.set_text(formated_namber(self.total))
            model.remove(iter)
-           
-        
-        total_label = builder.get_object("label_total")
-        total_label.set_text(formated_namber(self.total))
+
 
     def btn_add(self, button):
         print("add")
