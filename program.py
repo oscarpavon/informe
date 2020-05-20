@@ -49,6 +49,7 @@ class Handler:
     manager = None 
     total = 0
     dialog = None
+    inform_generated = False
     def __init__(self, manager):
         document_open()
 
@@ -79,6 +80,9 @@ class Handler:
 
         self.messure = "m2" 
         
+        total_label = builder.get_object("label_total")
+        total_label.set_text("0")
+
     def rb_action_ml(self,button):
         self.messure = "ml"
     def rb_action_m2(self,button):
@@ -277,7 +281,7 @@ class Handler:
         for elem in self.list:
             (des , count , unit ,price , total) = elem     
             table.cell(i,0).text = des 
-            table.cell(i,1).text = str(count)+self.messure+"."
+            table.cell(i,1).text = str(count)+unit+"."
             table.cell(i,1).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
             
             table.cell(i,2).text = str(price)
@@ -351,6 +355,24 @@ class Handler:
     def onDestroy(self, *args):
         print("Close program")
         Gtk.main_quit()
+
+    def btn_print(self, button):
+        print("printing")
+        if platform.system() == 'Windows':    # Windows
+            relative_path = os.path.abspath(filepath) 
+            os.startfile(relative_path, "print") 
+
+    def btn_inform_show(self, button):
+        if(inform_generated == False):
+            print("No file generated") 
+            return
+        if platform.system() == 'Windows':    # Windows
+            filepath = "datos/new_document.docx" 
+            relative_path = os.path.abspath(filepath) 
+            os.startfile(relative_path)
+        else:
+            filepath = "datos/new_document.docx" 
+            subprocess.call(('xdg-open', filepath))
 
 builder = Gtk.Builder()
 builder.add_from_file("inform_generator.glade")
