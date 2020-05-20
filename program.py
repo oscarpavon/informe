@@ -18,8 +18,7 @@ from random import randint
 today = date.today()
 def document_open():
     document = Document("./datos/plantilla.docx")
-    print(document.paragraphs[3].text)
-    document.save('./datos/new_document.docx')
+ 
 
 def formated_namber(value):
     formated = "{:,}".format(value)
@@ -102,6 +101,9 @@ class Handler:
         self.update_half_total_label()
         button1 = builder.get_object("rb_1")
         button1.connect("toggled",self.on_radio_button_marta_select)
+        
+        inputone = builder.get_object("input")
+        self.connect('changed', self.on_changed)
 
         button2 = builder.get_object("rb_2")
         button3 = builder.get_object("rb_3")
@@ -380,12 +382,16 @@ class Handler:
             print("No file generated") 
             return
         if platform.system() == 'Windows':    # Windows
-            filepath = "datos/new_document.docx" 
+            filepath = "datos/presupuesto_generado.docx" 
             relative_path = os.path.abspath(filepath) 
             os.startfile(relative_path)
         else:
-            filepath = "datos/new_document.docx" 
+            filepath = "datos/presupuesto_generado.docx" 
             subprocess.call(('xdg-open', filepath))
+
+    def on_entry_changed(entry, *args):
+        text = entry.get_text().strip()
+        entry.set_text(''.join([i for i in text if i in '0123456789']))
 
 builder = Gtk.Builder()
 builder.add_from_file("inform_generator.glade")
