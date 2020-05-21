@@ -11,17 +11,21 @@ from docx import Document
 from photocopy import PhotocopyManager
 
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
 
 from num2words import num2words
 from random import randint
 
 today = date.today()
+inform_number = 2050
+
 def document_open():
     document = Document("./datos/plantilla.docx")
  
 
 def formated_namber(value):
     formated = "{:,}".format(value)
+    formated = formated.replace(',','.')
     return formated 
 
 def today_file(read_format):
@@ -283,25 +287,41 @@ class Handler:
             row_count = row_count + 1
          
         for elem in self.list:
-            (des , count , unit ,price , total) = elem     
-            table.cell(i,0).text = des 
-            table.cell(i,1).text = str(count)+unit+"."
+            (des , count , unit ,price , total) = elem   
+            run = table.cell(i,0).paragraphs[0].add_run(des)
+            run.font.size = Pt(10)
+            run.font.name = "Arial"  
+
+            count_text = str(count)+unit+"."          
+            run = table.cell(i,1).paragraphs[0].add_run(count_text)
+            run.font.size = Pt(10)
+            run.font.name = "Arial" 
             table.cell(i,1).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
             
-            table.cell(i,2).text = str(price)
+            price_text = str(price)
+            run = table.cell(i,2).paragraphs[0].add_run(price_text)
+            run.font.size = Pt(10)
+            run.font.name = "Arial" 
             table.cell(i,2).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
 
-            table.cell(i,3).text = str(total)
+            run = table.cell(i,3).paragraphs[0].add_run(str(total))
+            run.font.size = Pt(10)
+            run.font.name = "Arial"            
             table.cell(i,3).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
             
             i = i + 1
 
-        table.cell(row_count-2,3).text = formated_namber(self.total) 
-        text_total_line = "Son Gs.: " + num2words(self.total,lang='es') + "---------------"
         table.cell(row_count-1,0).text = ''
-        run = table.cell(row_count-1,0).paragraphs[0].add_run(text_total_line) 
+        run = table.cell(row_count-2,3).paragraphs[0].add_run(formated_namber(self.total))
+        run.font.size = Pt(10)
+        run.font.name = "Arial"
+        table.cell(row_count-2,3).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT 
+
+        text_total_line = "Son Gs.: " + num2words(self.total,lang='es') + "---------------"
+        run = table.cell(row_count-1,0).paragraphs[0].add_run(text_total_line)
+        run.font.name = "Arial"
         run.font.bold = True
-        run.font.size = 10
+        run.font.size = Pt(10)
 
     def on_button_generate_pressed(self, button):
         print("generate")
@@ -339,7 +359,7 @@ class Handler:
         for path in paths:
            iter = model.get_iter(path)
            text_value = self.list[iter][4]
-           value = text_value.replace(',','')
+           value = text_value.replace('.','')
            print(int(value))
            self.total = self.total - int(value) 
            total_label = builder.get_object("label_total")
@@ -376,6 +396,8 @@ class Handler:
         if platform.system() == 'Windows':    # Windows
             relative_path = os.path.abspath(filepath) 
             os.startfile(relative_path, "print") 
+        else:
+            print("print in freebsd")
 
     def btn_inform_show(self, button):
         if(self.inform_generated == False):
