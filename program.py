@@ -411,8 +411,9 @@ class Handler:
     def btn_print_clicked(self, button):
         print("printing")
         if platform.system() == 'Windows':    # Windows
-            relative_path = os.path.abspath(filepath) 
-            os.startfile(relative_path, "print") 
+            #relative_path = os.path.abspath(filepath) 
+            path = "./datos/informe_generado.docx"
+            os.startfile(path, "print") 
         else:
             print("print in freebsd")
 
