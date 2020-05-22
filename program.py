@@ -18,6 +18,7 @@ from docx.shared import Pt
 
 from num2words import num2words
 from random import randint
+import subprocess
 
 today = date.today()
 
@@ -411,9 +412,11 @@ class Handler:
     def btn_print_clicked(self, button):
         print("printing")
         if platform.system() == 'Windows':    # Windows
-            #relative_path = os.path.abspath(filepath) 
-            path = "./datos/informe_generado.docx"
-            os.startfile(path, "print") 
+            path = "./datos/presupuesto_generado.docx"
+            #relative_path = os.path.abspath(path) 
+            #A
+            # os.startfile(relative_path, "print") 
+            subprocess.call("printing.bat")
         else:
             print("print in freebsd")
 
