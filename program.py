@@ -7,6 +7,9 @@ import os.path
 import platform, subprocess
 import shutil
 import re
+from utils import formated_namber
+from utils import get_text_moth
+
 from docx import Document
 from photocopy import PhotocopyManager
 
@@ -17,47 +20,31 @@ from num2words import num2words
 from random import randint
 
 today = date.today()
-inform_number = 2050
 
-def document_open():
-    document = Document("./datos/plantilla.docx")
- 
-
-def formated_namber(value):
-    formated = "{:,}".format(value)
-    formated = formated.replace(',','.')
-    return formated 
-
-def today_file(read_format):
-    today = date.today()
-    filepath = "./datos/" + str(today) + ".txt"
-    from_file = open(filepath,read_format)
-
-def get_text_moth(number):
-    switcher = {
-            1: "Enero",
-            2: "Febrero",
-            3: "Marzo",
-            4: "Abril",
-            5: "Mayo",
-            6: "Junio",
-            7: "Julio",
-            8: "Agosto",
-            9: "Setiembre",
-            10: "Octubre",
-            11: "Noviembre",
-            12: "Diciembre"
-            }
-    return switcher.get(number,"Invalid")
 
 class Handler:
     manager = None 
     total = 0
     dialog = None
     inform_generated = False
-    def __init__(self, manager):
-        document_open()
+    table_count = 0
+    table_row_to_add = 0
 
+    inform_id = 0
+
+    def __init__(self, manager):
+        filepath = "./datos/presupuesto_numero.txt"
+        file_inform_number = open(filepath,"r")
+        number_line = file_inform_number.read(4)
+        self.inform_number = number_line
+        self.inform_id = int(number_line)
+
+        self.label_inform_number = builder.get_object("label_inform_number")
+        self.label_inform_number.set_text(self.inform_number+"-")
+        
+        self.spin = builder.get_object("spin_id")
+        
+        self.inform_number = self.label_inform_number.get_text()+str(self.spin.get_value_as_int())
 
         self.grid = Gtk.Grid()
         
@@ -87,6 +74,21 @@ class Handler:
         
         total_label = builder.get_object("label_total")
         total_label.set_text("0")
+        
+        self.btn_edit = builder.get_object("btn_edit")
+        self.btn_print = builder.get_object("btn_print")
+        self.btn_new = builder.get_object("btn_new_inform")
+        self.entry_save_as = builder.get_object("input_inform_name")
+        self.btn_save_as = builder.get_object("btn_save_as")
+
+        text_box_name = builder.get_object("client_name")
+        text_box_name.connect("insert_text",self.on_entry_insert_text)
+        text_box_name.connect("changed",self.on_entry_changed)
+        
+        in_price = builder.get_object("in_price")
+        #in_price.connect("insert_text",self.on_entry_insert_text_number)
+        in_price.connect("changed",self.on_entry_number_changed)
+        
 
     def rb_action_ml(self,button):
         self.messure = "ml"
@@ -326,10 +328,10 @@ class Handler:
     def on_button_generate_pressed(self, button):
         print("generate")
         self.inform_generated = True
-        text_box_name = builder.get_object("client_name")
-        text_box_build = builder.get_object("job_name")
-        text_box_adress = builder.get_object("adress")
-        text_box_telephone= builder.get_object("telephone")
+        self.text_box_name = builder.get_object("client_name")
+        self.text_box_build = builder.get_object("job_name")
+        self.text_box_adress = builder.get_object("adress")
+        self.text_box_telephone= builder.get_object("telephone")
 
         day = today.strftime("%d")
         year = today.strftime("%Y")
@@ -338,19 +340,30 @@ class Handler:
         inform_date = inform_date.upper()
 
         document = Document("./datos/plantilla.docx")
+        for x in range(self.table_row_to_add):
+            table = document.tables[0]
+            table.add_row()
 
-        self.insert_text_bold(document, 0, 'PRESUPUESTO' , "                                                    "+"Nro:"+str(randint(12000,40000))+"-"+str(randint(0,10)))
+        self.insert_text_bold(document, 0, 'PRESUPUESTO' , "                                                    "+ "Nro: " + self.inform_number)
         
         self.insert_text_bold(document, 2, inform_date , '')
 
-        self.insert_text_bold(document, 3, 'NOMBRE: ' , text_box_name.get_text())
-        self.insert_text_bold(document, 4, 'OBRA: ' , text_box_build.get_text())
-        self.insert_text_bold(document, 5, 'DIRECCIÓN: ' , text_box_adress.get_text())
-        self.insert_text_bold(document, 6, 'TELÉFONO: ' , text_box_telephone.get_text())
+        self.insert_text_bold(document, 3, 'NOMBRE: ' , self.text_box_name.get_text())
+        self.insert_text_bold(document, 4, 'OBRA: ' , self.text_box_build.get_text())
+        self.insert_text_bold(document, 5, 'DIRECCIÓN: ' , self.text_box_adress.get_text())
+        self.insert_text_bold(document, 6, 'TELÉFONO: ' , self.text_box_telephone.get_text())
     
         self.modify_table(document)
+       
+        self.btn_edit.set_visible(True)
+        self.btn_print.set_visible(True)
+
+        self.btn_new.set_visible(True)
+        self.entry_save_as.set_visible(True)
+        self.btn_save_as.set_visible(True)
 
         document.save('./datos/presupuesto_generado.docx')
+        self.document = document
         
     def btn_delete(self, button):
         print("delete")
@@ -369,20 +382,24 @@ class Handler:
 
     def btn_add(self, button):
         print("add")
-        description_obj = builder.get_object("in_description")
-        price_obj = builder.get_object("in_price")
-        count_obj = builder.get_object("in_count")
-        count = float(count_obj.get_text())
-        price = int(price_obj.get_text())
+        self.table_count = self.table_count + 1 
+        if(self.table_count > 5):
+            self.table_row_to_add = self.table_row_to_add + 1
+        self.description_obj = builder.get_object("in_description")
+        self.price_obj = builder.get_object("in_price")
+        self.count_obj = builder.get_object("in_count")
+        count = float(self.count_obj.get_text())
+        price = self.price_obj.get_text().replace('.','')
+        price = int(price)
         import_value = int(price * count)
-        new_element = (description_obj.get_text(), count_obj.get_text() ,self.messure, formated_namber(price) , formated_namber(import_value)) 
+        new_element = (self.description_obj.get_text(), self.count_obj.get_text() ,self.messure, formated_namber(price) , formated_namber(import_value)) 
         self.list.append(list(new_element))
         self.total = self.total + import_value         
-        total_label = builder.get_object("label_total")
-        total_label.set_text(formated_namber(self.total))
-        price_obj.set_text("")
-        count_obj.set_text("")
-        description_obj.set_text("")
+        self.total_label = builder.get_object("label_total")
+        self.total_label.set_text(formated_namber(self.total))
+        #price_obj.set_text("")
+        #count_obj.set_text("")
+        #description_obj.set_text("")
 
     def button_input_mount_pressed(self, button):
         input_mount = builder.get_object("input_value")
@@ -391,7 +408,7 @@ class Handler:
         print("Close program")
         Gtk.main_quit()
 
-    def btn_print(self, button):
+    def btn_print_clicked(self, button):
         print("printing")
         if platform.system() == 'Windows':    # Windows
             relative_path = os.path.abspath(filepath) 
@@ -411,9 +428,47 @@ class Handler:
             filepath = "datos/presupuesto_generado.docx" 
             subprocess.call(('xdg-open', filepath))
 
-    def on_entry_changed(entry, *args):
-        text = entry.get_text().strip()
-        entry.set_text(''.join([i for i in text if i in '0123456789']))
+    def btn_save_as_clicked(self, button):
+        print("save as")
+        entry = builder.get_object("input_inform_name")
+        self.document.save("./datos/"+entry.get_text())
+        
+    def on_entry_changed(self,entry):
+        input_save_name = builder.get_object("input_inform_name")
+        self.inform_number = self.label_inform_number.get_text()+str(self.spin.get_value_as_int())
+        input_save_name.set_text(entry.get_text()+self.inform_number+".docx")
+
+    def on_entry_insert_text(self,entry,text,length,position):
+        print("insert")
+
+    def btn_new_clicked(self, button):
+        print("new")
+        self.inform_id += 1
+        print(self.inform_id)
+        self.label_inform_number = builder.get_object("label_inform_number")
+        self.label_inform_number.set_text(str(self.inform_id)+"-")
+        open_file = open("./datos/presupuesto_numero.txt","w+")
+        open_file.write(str(self.inform_id))  
+        self.list.clear()
+        self.price_obj.set_text("")
+        self.count_obj.set_text("")
+        self.description_obj.set_text("")
+        self.text_box_name.set_text("") 
+        self.text_box_build.set_text("")
+        self.text_box_adress.set_text("")
+        self.text_box_telephone.set_text("")
+        self.total = 0
+        self.total_label.set_text(formated_namber(self.total))
+        self.table_row_to_add = 0  
+        self.table_count = 0
+
+    def on_entry_number_changed(self,entry):
+        formated = "{:,}".format(entry.get_text())
+        formated = formated.replace(',','.')
+        entry.set_text(formated)
+    def on_entry_insert_text_number(self,entry,text,length,position):
+         
+        print("insert number")
 
 builder = Gtk.Builder()
 builder.add_from_file("inform_generator.glade")
@@ -424,4 +479,9 @@ window = builder.get_object("window1")
 #window.set_icon_from_file('cat_logo.png')
 window.connect("destroy",Gtk.main_quit)
 window.show_all()
+handler.btn_edit.set_visible(False)
+handler.btn_print.set_visible(False)
+handler.btn_new.set_visible(False)
+handler.entry_save_as.set_visible(False)
+handler.btn_save_as.set_visible(False)
 Gtk.main()
