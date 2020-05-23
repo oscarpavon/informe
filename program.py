@@ -288,8 +288,10 @@ class Handler:
         document.paragraphs[paragraph_index].text = ''
         run = document.paragraphs[paragraph_index].add_run(title)
         run.font.bold = True
+        run.font.name = "Arial"
         run = document.paragraphs[paragraph_index].add_run(value)
         run.font.bold = True
+        run.font.name = "Arial"
     
     def table_clean(table):
         for row in table.rows:
@@ -356,7 +358,7 @@ class Handler:
             table = document.tables[0]
             table.add_row()
 
-        self.insert_text_bold(document, 0, 'PRESUPUESTO' , "                                                    "+ "Nro: " + self.inform_number)
+        self.insert_text_bold(document, 0, 'PRESUPUESTO' , "                                                    "+ "N°: " + self.inform_number)
         
         self.insert_text_bold(document, 2, inform_date , '')
 
