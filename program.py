@@ -320,7 +320,7 @@ class Handler:
         run.font.name = "Arial"
         table.cell(row_count-2,3).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT 
 
-        text_total_line = "Son Gs.: " + num2words(self.total,lang='es') + "---------------"
+        text_total_line = "Son Gs.: " + num2words(self.total,lang='es') + "."
         run = table.cell(row_count-1,0).paragraphs[0].add_run(text_total_line)
         run.font.name = "Arial"
         run.font.bold = True
@@ -398,9 +398,9 @@ class Handler:
         self.total = self.total + import_value         
         self.total_label = builder.get_object("label_total")
         self.total_label.set_text(formated_namber(self.total))
-        #price_obj.set_text("")
-        #count_obj.set_text("")
-        #description_obj.set_text("")
+        price_obj.set_text("")
+        count_obj.set_text("")
+        description_obj.set_text("")
 
     def button_input_mount_pressed(self, button):
         input_mount = builder.get_object("input_value")
