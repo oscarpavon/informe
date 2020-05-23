@@ -449,6 +449,7 @@ class Handler:
         print("new")
         self.inform_id += 1
         print(self.inform_id)
+        
         self.label_inform_number = builder.get_object("label_inform_number")
         self.label_inform_number.set_text(str(self.inform_id)+"-")
         open_file = open("./datos/presupuesto_numero.txt","w+")
