@@ -440,7 +440,7 @@ class Handler:
     def on_entry_changed(self,entry):
         input_save_name = builder.get_object("input_inform_name")
         self.inform_number = self.label_inform_number.get_text()+str(self.spin.get_value_as_int())
-        input_save_name.set_text(entry.get_text()+self.inform_number+".docx")
+        input_save_name.set_text(self.inform_number+entry.get_text()+".docx")
 
     def on_entry_insert_text(self,entry,text,length,position):
         print("insert")
