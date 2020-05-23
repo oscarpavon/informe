@@ -409,7 +409,7 @@ class Handler:
         self.total_label.set_text(formated_namber(self.total))
         self.price_obj.set_text("")
         self.count_obj.set_text("")
-        description_obj.set_text("")
+        self.description_obj.set_text("")
 
     def button_input_mount_pressed(self, button):
         input_mount = builder.get_object("input_value")
