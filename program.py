@@ -9,6 +9,7 @@ import shutil
 import re
 from utils import formated_namber
 from utils import get_text_moth
+from inform_mail import send_email
 
 from docx import Document
 from photocopy import PhotocopyManager
@@ -19,6 +20,8 @@ from docx.shared import Pt
 from num2words import num2words
 from random import randint
 import subprocess
+
+
 
 today = date.today()
 
@@ -41,6 +44,17 @@ class Handler:
         self.inform_id = int(number_line)
 
         self.label_inform_number = builder.get_object("label_inform_number")
+        self.text_box_name = builder.get_object("client_name")
+        self.text_box_build = builder.get_object("job_name")
+        self.text_box_adress = builder.get_object("adress")
+        self.text_box_telephone= builder.get_object("telephone")
+        self.description_obj = builder.get_object("in_description")
+        self.price_obj = builder.get_object("in_price")
+        self.count_obj = builder.get_object("in_count")
+        self.input_inform_name = builder.get_object("input_inform_name")
+        self.total_label = builder.get_object("label_total")
+        
+
         self.label_inform_number.set_text(self.inform_number+"-")
         
         self.spin = builder.get_object("spin_id")
@@ -320,7 +334,7 @@ class Handler:
         run.font.name = "Arial"
         table.cell(row_count-2,3).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT 
 
-        text_total_line = "Son Gs.: " + num2words(self.total,lang='es') + "---------------"
+        text_total_line = "Son Gs.: " + num2words(self.total,lang='es') + "."
         run = table.cell(row_count-1,0).paragraphs[0].add_run(text_total_line)
         run.font.name = "Arial"
         run.font.bold = True
@@ -329,10 +343,7 @@ class Handler:
     def on_button_generate_pressed(self, button):
         print("generate")
         self.inform_generated = True
-        self.text_box_name = builder.get_object("client_name")
-        self.text_box_build = builder.get_object("job_name")
-        self.text_box_adress = builder.get_object("adress")
-        self.text_box_telephone= builder.get_object("telephone")
+     
 
         day = today.strftime("%d")
         year = today.strftime("%Y")
@@ -386,9 +397,7 @@ class Handler:
         self.table_count = self.table_count + 1 
         if(self.table_count > 5):
             self.table_row_to_add = self.table_row_to_add + 1
-        self.description_obj = builder.get_object("in_description")
-        self.price_obj = builder.get_object("in_price")
-        self.count_obj = builder.get_object("in_count")
+        
         count = float(self.count_obj.get_text())
         price = self.price_obj.get_text().replace('.','')
         price = int(price)
@@ -396,11 +405,11 @@ class Handler:
         new_element = (self.description_obj.get_text(), self.count_obj.get_text() ,self.messure, formated_namber(price) , formated_namber(import_value)) 
         self.list.append(list(new_element))
         self.total = self.total + import_value         
-        self.total_label = builder.get_object("label_total")
+       
         self.total_label.set_text(formated_namber(self.total))
-        #price_obj.set_text("")
-        #count_obj.set_text("")
-        #description_obj.set_text("")
+        self.price_obj.set_text("")
+        self.count_obj.set_text("")
+        self.description_obj.set_text("")
 
     def button_input_mount_pressed(self, button):
         input_mount = builder.get_object("input_value")
@@ -440,15 +449,22 @@ class Handler:
     def on_entry_changed(self,entry):
         input_save_name = builder.get_object("input_inform_name")
         self.inform_number = self.label_inform_number.get_text()+str(self.spin.get_value_as_int())
-        input_save_name.set_text(entry.get_text()+self.inform_number+".docx")
+        input_save_name.set_text(self.inform_number+entry.get_text()+".docx")
 
     def on_entry_insert_text(self,entry,text,length,position):
         print("insert")
-
+    def btn_send_mail(self, button):
+        print("email")
+       
+        send_email('pavon_oscar@outlook.com',
+           'Happy New Year',
+           'We love Outlook', 
+           'datos/presupuesto_generado.docx')
     def btn_new_clicked(self, button):
         print("new")
         self.inform_id += 1
         print(self.inform_id)
+        
         self.label_inform_number = builder.get_object("label_inform_number")
         self.label_inform_number.set_text(str(self.inform_id)+"-")
         open_file = open("./datos/presupuesto_numero.txt","w+")
@@ -465,6 +481,7 @@ class Handler:
         self.total_label.set_text(formated_namber(self.total))
         self.table_row_to_add = 0  
         self.table_count = 0
+        self.input_inform_name.set_text('')
 
     def on_entry_number_changed(self,entry):
         formated = "{:,}".format(entry.get_text())
