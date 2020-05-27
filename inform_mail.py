@@ -11,7 +11,7 @@ def send_email(email_recipient,
                email_message,
                attachment_location = ''):
 
-    email_sender = 'gyr_asociadossrl@hotmail.com'
+    email_sender = 'gyr-asociadossrl@hotmail.com'
 
     msg = MIMEMultipart()
     msg['From'] = email_sender
@@ -34,7 +34,8 @@ def send_email(email_recipient,
         server = smtplib.SMTP('smtp.office365.com', 587)
         server.ehlo()
         server.starttls()
-        server.login('gyr_asociadossrl@hotmail.com', 'password')
+        #server.login('gyr_asociadossrl@hotmail.com', 'password')
+        server.login('gyr-asociadossrl@hotmail.com', 'GYR80066302-0')
         text = msg.as_string()
         server.sendmail(email_sender, email_recipient, text)
         print('email sent')

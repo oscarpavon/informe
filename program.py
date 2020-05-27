@@ -457,10 +457,11 @@ class Handler:
         print("insert")
     def btn_send_mail(self, button):
         print("email")
-       
-        send_email('pavon_oscar@outlook.com',
-           'Happy New Year',
-           'We love Outlook', 
+        input_mail = builder.get_object("input_send_mail") 
+        
+        send_email(input_mail.get_text(),
+           'Presupuesto',
+           'Presupuesto', 
            'datos/presupuesto_generado.docx')
     def btn_new_clicked(self, button):
         print("new")
