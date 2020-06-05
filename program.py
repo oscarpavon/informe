@@ -540,7 +540,9 @@ class Handler:
         count = float(self.count_obj.get_text())
         price = self.price_obj.get_text().replace('.','')
         price = int(price)
-        import_value = int(price * count)
+        value = price * count
+        value = round(value)
+        import_value = int(value)
         new_element = (self.description_obj.get_text(), self.count_obj.get_text() ,self.messure, formated_namber(price) , formated_namber(import_value)) 
         self.list.append(list(new_element))
         self.total = self.total + import_value         
