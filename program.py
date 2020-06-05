@@ -21,7 +21,9 @@ from num2words import num2words
 from random import randint
 import subprocess
 
-
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.table import _Cell
 
 today = date.today()
 
@@ -53,7 +55,19 @@ class Handler:
         self.count_obj = builder.get_object("in_count")
         self.input_inform_name = builder.get_object("input_inform_name")
         self.total_label = builder.get_object("label_total")
-        
+
+        self.payment_type = "CONTADO"
+
+        rb_meter = builder.get_object("rb_meters")
+        rb_meter2 = builder.get_object("rb_m2")
+        rb_unit= builder.get_object("rb_unit")
+        rb_ml= builder.get_object("rb_ml")
+
+        rb_5050 = builder.get_object("rb_5050")
+        rb_cash = builder.get_object("rb_cash")
+
+        rb_cash.connect("toggled",self.rb_action_cash)
+        rb_5050.connect("toggled",self.rb_action_5050)        
 
         self.label_inform_number.set_text(self.inform_number+"-")
         
@@ -75,10 +89,7 @@ class Handler:
         
         hbox.pack_start(self.treeview,True,True,1)
         #radios buttons units
-        rb_meter = builder.get_object("rb_meters")
-        rb_meter2 = builder.get_object("rb_m2")
-        rb_unit= builder.get_object("rb_unit")
-        rb_ml= builder.get_object("rb_ml")
+        
 
         rb_meter.connect("toggled",self.rb_action_meters)
         rb_meter2.connect("toggled",self.rb_action_m2)
@@ -97,7 +108,7 @@ class Handler:
         self.btn_save_as = builder.get_object("btn_save_as")
 
         text_box_name = builder.get_object("client_name")
-        text_box_name.connect("insert_text",self.on_entry_insert_text)
+        #text_box_name.connect("insert_text",self.on_entry_insert_text)
         text_box_name.connect("changed",self.on_entry_changed)
         
         in_price = builder.get_object("in_price")
@@ -113,6 +124,11 @@ class Handler:
         self.messure = "m"
     def rb_action_units(self,button):
         self.messure = "und"
+    def rb_action_5050(self,button):
+        self.payment_type = "50% al empezar y el saldo al finalizar el trabajo."
+    
+    def rb_action_cash(self,button):
+        self.payment_type = "CONTADO"
 
     def init(self):
         #manager.init_logger()    
@@ -179,39 +195,6 @@ class Handler:
     ###########################################
     ############       Buttons      ###########
     ###########################################
-    def button_show_extract_clicked(self , button):
-        print("Extracts")
-
-    def button_print_service_clicked(self, button):
-        print("Print service")
-        black = True
-        if(self.manager.current_print_type == "black_and_white"):
-            self.print_total(1000,"Impresion en Blanco y Negro")
-        elif (self.manager.current_print_type == "color"):
-            self.print_total(2500,"Impresion a Color")
-
-    def button_input_value_in_box_pressed(self , button):
-        input_box = builder.get_object("input_value_in_box")
-        value = input_box.get_text()
-        value = int(value)
-        self.manager.initial_value_in_the_box = value
-        self.update_total_label()
-
-    def button_SET_pressed(self, button):
-        self.print_total(8000,"Certificado Contribuyente / No Contributente")
-
-    def button_add_ID_count(self, button):
-        self.print_total(1000,"Fotocopia de Cedula")
-    def button_add_photocopie_count(self, button):
-        self.print_total(500,"Fotocopia Simple Blanco y Negro")
-    def button_curriculum_pressed(self, button):
-        self.print_total(10000,"Curriculum")
-    def button_judment_pressed(self, button):
-        self.print_total(9000,"Antecedente Judicial")
-    def button_folder_pressed(self, button):
-        self.print_total(2000,"Carpeta")
-    def button_plastic_pressed(self, button):
-        self.print_total(500,"Folio")
 
     def button_undo_pressed(self, button):
         print("undo") 
@@ -284,6 +267,7 @@ class Handler:
             filepath = "./datos/" + str(today) + ".txt" 
             subprocess.call(('xdg-open', filepath))
 
+    
     def insert_text_bold(self, document, paragraph_index  ,title , value):
         document.paragraphs[paragraph_index].text = ''
         run = document.paragraphs[paragraph_index].add_run(title)
@@ -296,16 +280,85 @@ class Handler:
     def table_clean(table):
         for row in table.rows:
             row.cells[0].text = ""
+    def table_get_row_count(self, table):
+        row_count = 0
+        for row in table.rows:
+            row_count = row_count + 1
+        return row_count
 
+    def set_cell_border(self, cell: _Cell, **kwargs):
+        """
+        Set cell`s border
+        Usage:
+
+        set_cell_border(
+            cell,
+            top={"sz": 12, "val": "single", "color": "#FF0000", "space": "0"},
+            bottom={"sz": 12, "color": "#00FF00", "val": "single"},
+            start={"sz": 24, "val": "dashed", "shadow": "true"},
+            end={"sz": 12, "val": "dashed"},
+        )
+        """
+        tc = cell._tc
+        tcPr = tc.get_or_add_tcPr()
+
+        # check for tag existnace, if none found, then create one
+        tcBorders = tcPr.first_child_found_in("w:tcBorders")
+        if tcBorders is None:
+            tcBorders = OxmlElement('w:tcBorders')
+            tcPr.append(tcBorders)
+
+        # list over all available tags
+        for edge in ('right', 'top', 'left', 'bottom', 'insideH', 'insideV'):
+            edge_data = kwargs.get(edge)
+            if edge_data:
+                tag = 'w:{}'.format(edge)
+
+                # check for tag existnace, if none found, then create one
+                element = tcBorders.find(qn(tag))
+                if element is None:
+                    element = OxmlElement(tag)
+                    tcBorders.append(element)
+
+                # looks like order of attributes is important
+                for key in ["sz", "val", "color", "space", "shadow"]:
+                    if key in edge_data:
+                        element.set(qn('w:{}'.format(key)), str(edge_data[key]))
+
+
+    def modifyBorder(self,table):
+        tbl = table._tbl # get xml element in table
+        for cell in tbl.iter_tcs():
+            tcPr = cell.tcPr # get tcPr element, in which we can define style of borders
+            tcBorders = OxmlElement('w:tcBorders')
+            top = OxmlElement('w:top')
+            top.set(qn('w:val'), 'single')
+        
+            left = OxmlElement('w:left')
+            left.set(qn('w:val'), 'single')
+        
+            bottom = OxmlElement('w:bottom')
+            bottom.set(qn('w:val'), 'single')
+            bottom.set(qn('w:sz'), '4')
+            bottom.set(qn('w:space'), '0')
+            bottom.set(qn('w:color'), 'auto')
+
+            right = OxmlElement('w:right')
+            right.set(qn('w:val'), 'single')
+
+            tcBorders.append(top)
+            tcBorders.append(left)
+            tcBorders.append(bottom)
+            tcBorders.append(right)
+            tcPr.append(tcBorders)
+    
     def modify_table(self, document):
         print("table")
         i = 1 
         table = document.tables[0]
-        row_count = 0
-        for row in table.rows:
-            row_count = row_count + 1
-         
+        
         for elem in self.list:
+            table.add_row() 
             (des , count , unit ,price , total) = elem   
             run = table.cell(i,0).paragraphs[0].add_run(des)
             run.font.size = Pt(10)
@@ -328,9 +381,29 @@ class Handler:
             run.font.name = "Arial"            
             table.cell(i,3).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
             
-            i = i + 1
+            self.set_cell_border(
+                    table.cell(i,3),
+                       right={"sz": 12, "val": "single"},
+                       left={"sz": 12, "val": "single"}       
+            )
+            self.set_cell_border(
+                    table.cell(i,0),
+                       left={"sz": 12, "val": "single"},       
+            )
 
-        table.cell(row_count-1,0).text = ''
+
+            i = i + 1
+        
+        table.add_row()
+        table.add_row()
+
+        row_count = self.table_get_row_count(table)
+
+        run = table.cell(row_count-2,0).paragraphs[0].add_run("TOTAL: ")
+        run.font.bold = True
+        run.font.size = Pt(10)
+        run.font.name = "Arial"
+
         run = table.cell(row_count-2,3).paragraphs[0].add_run(formated_namber(self.total))
         run.font.size = Pt(10)
         run.font.name = "Arial"
@@ -341,6 +414,61 @@ class Handler:
         run.font.name = "Arial"
         run.font.bold = True
         run.font.size = Pt(10)
+       
+        self.modifyBorder(table)
+
+        total_cell = table.cell(row_count-2,0)
+        
+        text_total_cell = table.cell(row_count-1,0)
+        text_total_cell_nil = table.cell(row_count-1,3)
+        total_cell_end= table.cell(row_count-2,3)
+
+        self.set_cell_border(
+            total_cell,
+            top={"sz": 12, "val": "single"},           
+            bottom={"sz": 12, "val": "single"},   
+            left={"sz": 12, "val": "single"}, 
+            right={"sz": 12, "val": "single"},       
+        )
+
+        self.set_cell_border(
+            text_total_cell,
+            top={"sz": 12, "val": "single"},           
+            bottom={"sz": 12, "val": "single"},   
+            left={"sz": 12, "val": "single"}, 
+            right={"sz": 12, "val": "single"},       
+        )
+
+        self.set_cell_border(
+            text_total_cell_nil,
+            top={"sz": 12, "val": "nil"},           
+            bottom={"sz": 12, "val": "nil"},   
+            left={"sz": 12, "val": "nil"}, 
+            right={"sz": 12, "val": "nil"},       
+        )
+
+        
+        self.set_cell_border(
+            total_cell_end,
+            top={"sz": 12, "val": "single"},           
+            bottom={"sz": 12, "val": "single"},   
+            left={"sz": 12, "val": "single"}, 
+            right={"sz": 12, "val": "single"},       
+        )
+  
+        cell1 = table.cell(row_count-1,0)
+        cell2 = table.cell(row_count-1,1)
+        cell3 = table.cell(row_count-1,2)
+       
+        cell1.merge(cell2)
+        cell1.merge(cell3) 
+
+        cell1 = table.cell(row_count-2,0)
+        cell2 = table.cell(row_count-2,1)
+        cell3 = table.cell(row_count-2,2)
+
+        cell1.merge(cell2)
+        cell1.merge(cell3) 
 
     def on_button_generate_pressed(self, button):
         print("generate")
@@ -354,11 +482,8 @@ class Handler:
         inform_date = inform_date.upper()
 
         document = Document("./datos/plantilla.docx")
-        for x in range(self.table_row_to_add):
-            table = document.tables[0]
-            table.add_row()
 
-        self.insert_text_bold(document, 0, 'PRESUPUESTO' , "                                                    "+ "N°: " + self.inform_number)
+        self.insert_text_bold(document, 0, 'PRESUPUESTO' , "                                           "+ "N°: " + self.inform_number)
         
         self.insert_text_bold(document, 2, inform_date , '')
 
@@ -367,6 +492,18 @@ class Handler:
         self.insert_text_bold(document, 5, 'DIRECCIÓN: ' , self.text_box_adress.get_text())
         self.insert_text_bold(document, 6, 'TELÉFONO: ' , self.text_box_telephone.get_text())
     
+
+        paragraph_index = 14
+        document.paragraphs[paragraph_index].text = ''
+        run = document.paragraphs[paragraph_index].add_run("FORMA DE PAGO: ")
+        run.font.bold = True
+        run.font.name = "Arial"
+        run.font.size = Pt(10)
+        run = document.paragraphs[paragraph_index].add_run(self.payment_type)
+        run.font.name = "Arial"
+        run.font.size = Pt(10)
+
+
         self.modify_table(document)
        
         self.btn_edit.set_visible(True)
